@@ -213,52 +213,52 @@ func TestPopMultiOrder(t *testing.T) {
 	}
 }
 
-// func TestRemove(t *testing.T) {
-// 	c, q := initQueue(t, "scheduled_queue")
-// 	defer c.Close()
+func TestRemove(t *testing.T) {
+	c, q := initQueue(t, "scheduled_queue")
+	defer c.Close()
 
-// 	if _, err := q.Push("oldest", time.Now().Add(-300*time.Millisecond)); err != nil {
-// 		t.Error(err)
-// 		t.FailNow()
-// 	}
+	if _, _, err := q.Push(Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)}); err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 
-// 	if _, err := q.Push("newer", time.Now().Add(-100*time.Millisecond)); err != nil {
-// 		t.Error(err)
-// 		t.FailNow()
-// 	}
+	if _, _, err := q.Push(Job{Content: "newer", When: time.Now().Add(-100 * time.Millisecond)}); err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 
-// 	if _, err := q.Push("older", time.Now().Add(-200*time.Millisecond)); err != nil {
-// 		t.Error(err)
-// 		t.FailNow()
-// 	}
+	if _, _, err := q.Push(Job{Content: "older", When: time.Now().Add(-200 * time.Millisecond), ID: "OLDER_ID"}); err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 
-// 	q.Remove("older")
+	q.Remove("OLDER_ID")
 
-// 	jobs, err := q.PopJobs(3)
-// 	if err != nil {
-// 		t.Error(err)
-// 		t.FailNow()
-// 	}
+	jobs, err := q.PopJobs(3)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 
-// 	if len(jobs) != 2 {
-// 		t.Error("Expected 2 jobs. got: ", jobs)
-// 		t.FailNow()
-// 	}
+	if len(jobs) != 2 {
+		t.Error("Expected 2 jobs. got: ", jobs)
+		t.FailNow()
+	}
 
-// 	if jobs[0] != "oldest" {
-// 		t.Error("Expected to the oldest job off the queue, but I got this:", jobs)
-// 	}
+	if jobs[0] != "oldest" {
+		t.Error("Expected to the oldest job off the queue, but I got this:", jobs)
+	}
 
-// 	if jobs[1] != "newer" {
-// 		t.Error("Expected to the newer job off the queue, but I got this:", jobs)
-// 	}
+	if jobs[1] != "newer" {
+		t.Error("Expected to the newer job off the queue, but I got this:", jobs)
+	}
 
-// 	job, err := q.Pop()
-// 	if err != nil {
-// 		t.Error(err)
-// 		t.FailNow()
-// 	}
-// 	if job != "" {
-// 		t.Error("Expected no jobs")
-// 	}
-// }
+	job, err := q.Pop()
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	if job != "" {
+		t.Error("Expected no jobs")
+	}
+}
