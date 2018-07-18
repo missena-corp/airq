@@ -21,6 +21,14 @@ func initQueue(t *testing.T, name string) (redis.Conn, *Queue) {
 	return c, q
 }
 
+func addJobs(t *testing.T, q *Queue, jobs []Job) {
+	for _, job := range jobs {
+		if _, _, err := q.Push(job); err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
+	}
+}
 func TestQueueTasks(t *testing.T) {
 	c, q := initQueue(t, "basic_queue")
 	defer c.Close()
@@ -106,20 +114,11 @@ func TestPopOrder(t *testing.T) {
 	c, q := initQueue(t, "scheduled_queue")
 	defer c.Close()
 
-	if _, _, err := q.Push(Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)}); err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-
-	if _, _, err := q.Push(Job{Content: "newer", When: time.Now().Add(-100 * time.Millisecond)}); err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-
-	if _, _, err := q.Push(Job{Content: "older", When: time.Now().Add(-200 * time.Millisecond)}); err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
+	addJobs(t, q, []Job{
+		Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)},
+		Job{Content: "newer", When: time.Now().Add(-100 * time.Millisecond)},
+		Job{Content: "older", When: time.Now().Add(-200 * time.Millisecond)},
+	})
 
 	job, err := q.Pop()
 	if err != nil {
@@ -165,20 +164,11 @@ func TestPopMultiOrder(t *testing.T) {
 	c, q := initQueue(t, "scheduled_queue")
 	defer c.Close()
 
-	if _, _, err := q.Push(Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)}); err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-
-	if _, _, err := q.Push(Job{Content: "newer", When: time.Now().Add(-100 * time.Millisecond)}); err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-
-	if _, _, err := q.Push(Job{Content: "older", When: time.Now().Add(-200 * time.Millisecond)}); err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
+	addJobs(t, q, []Job{
+		Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)},
+		Job{Content: "newer", When: time.Now().Add(-100 * time.Millisecond)},
+		Job{Content: "older", When: time.Now().Add(-200 * time.Millisecond)},
+	})
 
 	jobs, err := q.PopJobs(3)
 	if err != nil {
@@ -217,20 +207,11 @@ func TestRemove(t *testing.T) {
 	c, q := initQueue(t, "scheduled_queue")
 	defer c.Close()
 
-	if _, _, err := q.Push(Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)}); err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-
-	if _, _, err := q.Push(Job{Content: "newer", When: time.Now().Add(-100 * time.Millisecond)}); err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-
-	if _, _, err := q.Push(Job{Content: "older", When: time.Now().Add(-200 * time.Millisecond), ID: "OLDER_ID"}); err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
+	addJobs(t, q, []Job{
+		Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)},
+		Job{Content: "newer", When: time.Now().Add(-100 * time.Millisecond)},
+		Job{Content: "older", When: time.Now().Add(-200 * time.Millisecond), ID: "OLDER_ID"},
+	})
 
 	q.Remove("OLDER_ID")
 
