@@ -64,7 +64,7 @@ func (q *Queue) Remove(id string) (bool, error) {
 // Push schedule a job at some point in the future, or some point in the past.
 // Scheduling a job far in the past is the same as giving it a high priority,
 // as jobs are popped in order of due date.
-func (q *Queue) Push(job Job) (bool, error) {
+func (q *Queue) Push(job Job) (bool, string, error) {
 	if job.ID == "" {
 		job.ID = generateID(job.Content)
 	}
@@ -75,7 +75,7 @@ func (q *Queue) Push(job Job) (bool, error) {
 	q.c.Send("ZADD", q.KeyQueue, job.When.UnixNano(), job.ID)
 	q.c.Send("HSET", q.ValueQueue, job.ID, job.Content)
 	reply, err := q.c.Do("EXEC")
-	return bothUpdated(reply), err
+	return bothUpdated(reply), job.ID, err
 }
 
 // Pending returns the count of jobs pending, including scheduled jobs that are not due yet.

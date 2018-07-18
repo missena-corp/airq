@@ -25,7 +25,7 @@ func TestQueueTasks(t *testing.T) {
 	c, q := initQueue(t, "basic_queue")
 	defer c.Close()
 
-	b, err := q.Push(Job{Content: "basic item 1"})
+	b, _, err := q.Push(Job{Content: "basic item 1"})
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -35,7 +35,7 @@ func TestQueueTasks(t *testing.T) {
 		t.Error("expected item to be added to queue but was not")
 	}
 
-	b, err = q.Push(Job{Content: "basic item 1"})
+	b, _, err = q.Push(Job{Content: "basic item 1"})
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -59,7 +59,7 @@ func TestQueueTaskScheduling(t *testing.T) {
 	c, q := initQueue(t, "scheduled_queue")
 	defer c.Close()
 
-	b, err := q.Push(Job{Content: "scheduled item 1", When: time.Now().Add(90 * time.Millisecond)})
+	b, _, err := q.Push(Job{Content: "scheduled item 1", When: time.Now().Add(90 * time.Millisecond)})
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -106,17 +106,17 @@ func TestPopOrder(t *testing.T) {
 	c, q := initQueue(t, "scheduled_queue")
 	defer c.Close()
 
-	if _, err := q.Push(Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)}); err != nil {
+	if _, _, err := q.Push(Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)}); err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
 
-	if _, err := q.Push(Job{Content: "newer", When: time.Now().Add(-100 * time.Millisecond)}); err != nil {
+	if _, _, err := q.Push(Job{Content: "newer", When: time.Now().Add(-100 * time.Millisecond)}); err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
 
-	if _, err := q.Push(Job{Content: "older", When: time.Now().Add(-200 * time.Millisecond)}); err != nil {
+	if _, _, err := q.Push(Job{Content: "older", When: time.Now().Add(-200 * time.Millisecond)}); err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
@@ -165,17 +165,17 @@ func TestPopMultiOrder(t *testing.T) {
 	c, q := initQueue(t, "scheduled_queue")
 	defer c.Close()
 
-	if _, err := q.Push(Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)}); err != nil {
+	if _, _, err := q.Push(Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)}); err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
 
-	if _, err := q.Push(Job{Content: "newer", When: time.Now().Add(-100 * time.Millisecond)}); err != nil {
+	if _, _, err := q.Push(Job{Content: "newer", When: time.Now().Add(-100 * time.Millisecond)}); err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
 
-	if _, err := q.Push(Job{Content: "older", When: time.Now().Add(-200 * time.Millisecond)}); err != nil {
+	if _, _, err := q.Push(Job{Content: "older", When: time.Now().Add(-200 * time.Millisecond)}); err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
