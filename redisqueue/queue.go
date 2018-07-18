@@ -83,15 +83,6 @@ func (q *Queue) Pending() (int64, error) {
 	return redis.Int64(q.c.Do("ZCARD", q.KeyQueue))
 }
 
-// FlushQueue removes everything from the queue. Useful for testing.
-func (q *Queue) FlushQueue() error {
-	q.c.Send("MULTI")
-	q.c.Send("DEL", q.KeyQueue)
-	q.c.Send("DEL", q.ValueQueue)
-	_, err := q.c.Do("EXEC")
-	return err
-}
-
 // Pop removes and returns a single job from the queue. Safe for concurrent use
 // (multiple goroutines must use their own Queue objects and redis connections)
 func (q *Queue) Pop() (string, error) {

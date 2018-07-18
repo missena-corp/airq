@@ -8,7 +8,7 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
-func initQueue(t *testing.T) (redis.Conn, *Queue) {
+func initQueue(t *testing.T) *Queue {
 	name := randomName()
 	c, err := redis.Dial("tcp", "127.0.0.1:6379")
 	if err != nil {
@@ -16,11 +16,11 @@ func initQueue(t *testing.T) (redis.Conn, *Queue) {
 		t.FailNow()
 	}
 	q := New(name, c)
-	if err := q.FlushQueue(); err != nil {
+	if err := flushQueue(q); err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
-	return c, q
+	return q
 }
 
 func addJobs(t *testing.T, q *Queue, jobs []Job) {
@@ -32,9 +32,17 @@ func addJobs(t *testing.T, q *Queue, jobs []Job) {
 	}
 }
 
-func clear(c redis.Conn, q *Queue) {
-	q.FlushQueue()
-	c.Close()
+func clear(q *Queue) {
+	flushQueue(q)
+	q.c.Close()
+}
+
+func flushQueue(q *Queue) error {
+	q.c.Send("MULTI")
+	q.c.Send("DEL", q.KeyQueue)
+	q.c.Send("DEL", q.ValueQueue)
+	_, err := q.c.Do("EXEC")
+	return err
 }
 
 func randomName() string {
@@ -48,8 +56,8 @@ func randomName() string {
 
 func TestQueueTasks(t *testing.T) {
 	t.Parallel()
-	c, q := initQueue(t)
-	defer clear(c, q)
+	q := initQueue(t)
+	defer clear(q)
 
 	b, _, err := q.Push(Job{Content: "basic item 1"})
 	if err != nil {
@@ -83,8 +91,8 @@ func TestQueueTasks(t *testing.T) {
 
 func TestQueueTaskScheduling(t *testing.T) {
 	t.Parallel()
-	c, q := initQueue(t)
-	defer clear(c, q)
+	q := initQueue(t)
+	defer clear(q)
 
 	b, _, err := q.Push(Job{Content: "scheduled item 1", When: time.Now().Add(90 * time.Millisecond)})
 	if err != nil {
@@ -131,8 +139,8 @@ func TestQueueTaskScheduling(t *testing.T) {
 
 func TestPopOrder(t *testing.T) {
 	t.Parallel()
-	c, q := initQueue(t)
-	defer clear(c, q)
+	q := initQueue(t)
+	defer clear(q)
 
 	addJobs(t, q, []Job{
 		Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)},
@@ -182,8 +190,8 @@ func TestPopOrder(t *testing.T) {
 
 func TestPopMultiOrder(t *testing.T) {
 	t.Parallel()
-	c, q := initQueue(t)
-	defer clear(c, q)
+	q := initQueue(t)
+	defer clear(q)
 
 	addJobs(t, q, []Job{
 		Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)},
@@ -226,8 +234,8 @@ func TestPopMultiOrder(t *testing.T) {
 
 func TestRemove(t *testing.T) {
 	t.Parallel()
-	c, q := initQueue(t)
-	defer clear(c, q)
+	q := initQueue(t)
+	defer clear(q)
 
 	addJobs(t, q, []Job{
 		Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)},
