@@ -8,11 +8,11 @@ var popJobsScript = redis.NewScript(3, `
 		local timestamp = KEYS[2]
 		local limit = KEYS[3]
 		local keys = redis.call('zrangebyscore', key_queue, '-inf', timestamp, 'LIMIT', 0, limit)
-		local values = {}
-		if table.getn(keys) > 0 then
-			values = redis.call('hmget', value_queue, unpack(keys))
-			redis.call('zrem', key_queue, unpack(keys))
-			redis.call('hdel', value_queue, unpack(keys))
+		if table.getn(keys) == 0 then
+			return {}
 		end
+		local values = redis.call('hmget', value_queue, unpack(keys))
+		redis.call('zrem', key_queue, unpack(keys))
+		redis.call('hdel', value_queue, unpack(keys))
 		return values
   `)
