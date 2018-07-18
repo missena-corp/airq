@@ -2,6 +2,7 @@ package redisqueue
 
 import (
 	"crypto/rand"
+	"reflect"
 	"testing"
 	"time"
 
@@ -205,21 +206,9 @@ func TestPopMultiOrder(t *testing.T) {
 		t.FailNow()
 	}
 
-	if len(jobs) != 3 {
-		t.Error("Expected 3 jobs. got: ", jobs)
-		t.FailNow()
-	}
-
-	if jobs[0] != "oldest" {
+	expected := []string{"oldest", "older", "newer"}
+	if !reflect.DeepEqual(jobs, expected) {
 		t.Error("Expected to the oldest job off the queue, but I got this:", jobs)
-	}
-
-	if jobs[1] != "older" {
-		t.Error("Expected to the older job off the queue, but I got this:", jobs)
-	}
-
-	if jobs[2] != "newer" {
-		t.Error("Expected to the newer job off the queue, but I got this:", jobs)
 	}
 
 	job, err := q.Pop()
@@ -251,17 +240,9 @@ func TestRemove(t *testing.T) {
 		t.FailNow()
 	}
 
-	if len(jobs) != 2 {
-		t.Error("Expected 2 jobs. got: ", jobs)
-		t.FailNow()
-	}
-
-	if jobs[0] != "oldest" {
+	expected := []string{"oldest", "newer"}
+	if !reflect.DeepEqual(jobs, expected) {
 		t.Error("Expected to the oldest job off the queue, but I got this:", jobs)
-	}
-
-	if jobs[1] != "newer" {
-		t.Error("Expected to the newer job off the queue, but I got this:", jobs)
 	}
 
 	job, err := q.Pop()
