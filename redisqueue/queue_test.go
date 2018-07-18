@@ -1,13 +1,15 @@
 package redisqueue
 
 import (
+	"crypto/rand"
 	"testing"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
 )
 
-func initQueue(t *testing.T, name string) (redis.Conn, *Queue) {
+func initQueue(t *testing.T) (redis.Conn, *Queue) {
+	name := randomName()
 	c, err := redis.Dial("tcp", "127.0.0.1:6379")
 	if err != nil {
 		t.Error(err)
@@ -29,9 +31,25 @@ func addJobs(t *testing.T, q *Queue, jobs []Job) {
 		}
 	}
 }
+
+func clear(c redis.Conn, q *Queue) {
+	q.FlushQueue()
+	c.Close()
+}
+
+func randomName() string {
+	b := make([]byte, 12)
+	_, err := rand.Read(b)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
+}
+
 func TestQueueTasks(t *testing.T) {
-	c, q := initQueue(t, "basic_queue")
-	defer c.Close()
+	t.Parallel()
+	c, q := initQueue(t)
+	defer clear(c, q)
 
 	b, _, err := q.Push(Job{Content: "basic item 1"})
 	if err != nil {
@@ -64,8 +82,9 @@ func TestQueueTasks(t *testing.T) {
 }
 
 func TestQueueTaskScheduling(t *testing.T) {
-	c, q := initQueue(t, "scheduled_queue")
-	defer c.Close()
+	t.Parallel()
+	c, q := initQueue(t)
+	defer clear(c, q)
 
 	b, _, err := q.Push(Job{Content: "scheduled item 1", When: time.Now().Add(90 * time.Millisecond)})
 	if err != nil {
@@ -111,8 +130,9 @@ func TestQueueTaskScheduling(t *testing.T) {
 }
 
 func TestPopOrder(t *testing.T) {
-	c, q := initQueue(t, "scheduled_queue")
-	defer c.Close()
+	t.Parallel()
+	c, q := initQueue(t)
+	defer clear(c, q)
 
 	addJobs(t, q, []Job{
 		Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)},
@@ -161,8 +181,9 @@ func TestPopOrder(t *testing.T) {
 }
 
 func TestPopMultiOrder(t *testing.T) {
-	c, q := initQueue(t, "scheduled_queue")
-	defer c.Close()
+	t.Parallel()
+	c, q := initQueue(t)
+	defer clear(c, q)
 
 	addJobs(t, q, []Job{
 		Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)},
@@ -204,8 +225,9 @@ func TestPopMultiOrder(t *testing.T) {
 }
 
 func TestRemove(t *testing.T) {
-	c, q := initQueue(t, "scheduled_queue")
-	defer c.Close()
+	t.Parallel()
+	c, q := initQueue(t)
+	defer clear(c, q)
 
 	addJobs(t, q, []Job{
 		Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)},
