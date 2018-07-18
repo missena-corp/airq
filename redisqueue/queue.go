@@ -53,13 +53,6 @@ func New(name string, c redis.Conn) *Queue {
 	}
 }
 
-// Push pushes a single job on to the queue. The job string can be any format,
-// as the queue doesn't really care.
-func (q *Queue) Push(job Job) (bool, error) {
-	job.When = time.Now()
-	return q.Schedule(job)
-}
-
 // Remove removes a fob from the queue
 func (q *Queue) Remove(id string) (bool, error) {
 	q.c.Send("MULTI")
@@ -68,10 +61,10 @@ func (q *Queue) Remove(id string) (bool, error) {
 	return redis.Bool(q.c.Do("EXEC"))
 }
 
-// Schedule schedule a job at some point in the future, or some point in the past.
+// Push schedule a job at some point in the future, or some point in the past.
 // Scheduling a job far in the past is the same as giving it a high priority,
 // as jobs are popped in order of due date.
-func (q *Queue) Schedule(job Job) (bool, error) {
+func (q *Queue) Push(job Job) (bool, error) {
 	if job.ID == "" {
 		job.ID = generateID(job.Content)
 	}

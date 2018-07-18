@@ -59,7 +59,7 @@ func TestQueueTaskScheduling(t *testing.T) {
 	c, q := initQueue(t, "scheduled_queue")
 	defer c.Close()
 
-	b, err := q.Schedule(Job{Content: "scheduled item 1", When: time.Now().Add(90 * time.Millisecond)})
+	b, err := q.Push(Job{Content: "scheduled item 1", When: time.Now().Add(90 * time.Millisecond)})
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -106,17 +106,17 @@ func TestPopOrder(t *testing.T) {
 	c, q := initQueue(t, "scheduled_queue")
 	defer c.Close()
 
-	if _, err := q.Schedule(Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)}); err != nil {
+	if _, err := q.Push(Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)}); err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
 
-	if _, err := q.Schedule(Job{Content: "newer", When: time.Now().Add(-100 * time.Millisecond)}); err != nil {
+	if _, err := q.Push(Job{Content: "newer", When: time.Now().Add(-100 * time.Millisecond)}); err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
 
-	if _, err := q.Schedule(Job{Content: "older", When: time.Now().Add(-200 * time.Millisecond)}); err != nil {
+	if _, err := q.Push(Job{Content: "older", When: time.Now().Add(-200 * time.Millisecond)}); err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
@@ -165,17 +165,17 @@ func TestPopMultiOrder(t *testing.T) {
 	c, q := initQueue(t, "scheduled_queue")
 	defer c.Close()
 
-	if _, err := q.Schedule(Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)}); err != nil {
+	if _, err := q.Push(Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)}); err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
 
-	if _, err := q.Schedule(Job{Content: "newer", When: time.Now().Add(-100 * time.Millisecond)}); err != nil {
+	if _, err := q.Push(Job{Content: "newer", When: time.Now().Add(-100 * time.Millisecond)}); err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
 
-	if _, err := q.Schedule(Job{Content: "older", When: time.Now().Add(-200 * time.Millisecond)}); err != nil {
+	if _, err := q.Push(Job{Content: "older", When: time.Now().Add(-200 * time.Millisecond)}); err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
@@ -217,17 +217,17 @@ func TestPopMultiOrder(t *testing.T) {
 // 	c, q := initQueue(t, "scheduled_queue")
 // 	defer c.Close()
 
-// 	if _, err := q.Schedule("oldest", time.Now().Add(-300*time.Millisecond)); err != nil {
+// 	if _, err := q.Push("oldest", time.Now().Add(-300*time.Millisecond)); err != nil {
 // 		t.Error(err)
 // 		t.FailNow()
 // 	}
 
-// 	if _, err := q.Schedule("newer", time.Now().Add(-100*time.Millisecond)); err != nil {
+// 	if _, err := q.Push("newer", time.Now().Add(-100*time.Millisecond)); err != nil {
 // 		t.Error(err)
 // 		t.FailNow()
 // 	}
 
-// 	if _, err := q.Schedule("older", time.Now().Add(-200*time.Millisecond)); err != nil {
+// 	if _, err := q.Push("older", time.Now().Add(-200*time.Millisecond)); err != nil {
 // 		t.Error(err)
 // 		t.FailNow()
 // 	}
