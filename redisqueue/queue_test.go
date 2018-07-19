@@ -26,7 +26,7 @@ func initQueue(t *testing.T) *Queue {
 
 func addJobs(t *testing.T, q *Queue, jobs []Job) {
 	for _, job := range jobs {
-		if _, _, err := q.Push(job); err != nil {
+		if _, _, err := q.Push(&job); err != nil {
 			t.Error(err)
 			t.FailNow()
 		}
@@ -60,7 +60,7 @@ func TestQueueTasks(t *testing.T) {
 	q := initQueue(t)
 	defer clear(q)
 
-	b, _, err := q.Push(Job{Body: "basic item 1"})
+	b, _, err := q.Push(&Job{Body: "basic item 1"})
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -70,7 +70,7 @@ func TestQueueTasks(t *testing.T) {
 		t.Error("expected item to be added to queue but was not")
 	}
 
-	b, _, err = q.Push(Job{Body: "basic item 1"})
+	b, _, err = q.Push(&Job{Body: "basic item 1"})
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -95,7 +95,7 @@ func TestQueueTaskScheduling(t *testing.T) {
 	q := initQueue(t)
 	defer clear(q)
 
-	b, _, err := q.Push(Job{Body: "scheduled item 1", When: time.Now().Add(90 * time.Millisecond)})
+	b, _, err := q.Push(&Job{Body: "scheduled item 1", When: time.Now().Add(90 * time.Millisecond)})
 	if err != nil {
 		t.Error(err)
 		t.FailNow()

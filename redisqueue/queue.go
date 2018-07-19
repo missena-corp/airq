@@ -57,7 +57,7 @@ func (q *Queue) Remove(id string) (bool, error) {
 // Push schedule a job at some point in the future, or some point in the past.
 // Scheduling a job far in the past is the same as giving it a high priority,
 // as jobs are popped in order of due date.
-func (q *Queue) Push(job Job) (bool, string, error) {
+func (q *Queue) Push(job *Job) (bool, string, error) {
 	if job.ID == "" {
 		if job.Unique {
 			job.ID = generateRandomID()
