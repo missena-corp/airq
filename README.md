@@ -6,15 +6,15 @@ This is a redis-based queue for usage in Go. I evaluated a lot of other options 
 
 ## Features
 
-1.  Ability to add arbitrary tasks to a queue in redis
-1.  Automatic dedupping of tasks. Multiple pushes of the exact same payload does not create any additional work.
-1.  Ability to schedule tasks in the future.
-1.  Atomic Push and Pop from queue. Two workers cannot get the same job.
-1.  Sorted FIFO queue.
-1.  Can act like a priority queue by scheduling a job with a really old timestamp
-1.  Well tested
-1.  Small, concise codebase
-1.  Simple API
+- Ability to add arbitrary tasks to a queue in redis
+- Option to Dedup tasks based on the task signature.
+- Ability to schedule tasks in the future.
+- Atomic Push and Pop from queue. Two workers cannot get the same job.
+- Sorted FIFO queue.
+- Can act like a priority queue by scheduling a job with a really old timestamp
+- Well tested
+- Small, concise codebase
+- Simple API
 
 ## Usage
 
@@ -31,13 +31,16 @@ defer c.Close()
 
 q := redisqueue.New("some_queue_name", c)
 
-wasAdded, err := q.Push("basic item")
+wasAdded, taskID, err := q.Push(redisqueue.Job{Body: "basic item"})
 if err != nil { ... }
 
 queueSize, err := q.Pending()
 if err != nil { ... }
 
-wasAdded, err := q.Schedule("scheduled item", time.Now().Add(10*time.Minute))
+wasAdded, taskID, err := q.Push(redisqueue.Job{
+  Body: "scheduled item",
+  When: time.Now().Add(10*time.Minute),
+})
 if err != nil { ... }
 ```
 
@@ -86,5 +89,5 @@ for !timeToQuit {
 ## Requirements
 
 - Redis 2.6.0 or greater
-- github.com/garyburd/redigo/redis
+- github.com/gomodule/redigo/redis
 - Go

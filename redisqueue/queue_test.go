@@ -60,7 +60,7 @@ func TestQueueTasks(t *testing.T) {
 	q := initQueue(t)
 	defer clear(q)
 
-	b, _, err := q.Push(Job{Content: "basic item 1"})
+	b, _, err := q.Push(Job{Body: "basic item 1"})
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -70,7 +70,7 @@ func TestQueueTasks(t *testing.T) {
 		t.Error("expected item to be added to queue but was not")
 	}
 
-	b, _, err = q.Push(Job{Content: "basic item 1"})
+	b, _, err = q.Push(Job{Body: "basic item 1"})
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -95,7 +95,7 @@ func TestQueueTaskScheduling(t *testing.T) {
 	q := initQueue(t)
 	defer clear(q)
 
-	b, _, err := q.Push(Job{Content: "scheduled item 1", When: time.Now().Add(90 * time.Millisecond)})
+	b, _, err := q.Push(Job{Body: "scheduled item 1", When: time.Now().Add(90 * time.Millisecond)})
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -144,9 +144,9 @@ func TestPopOrder(t *testing.T) {
 	defer clear(q)
 
 	addJobs(t, q, []Job{
-		Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)},
-		Job{Content: "newer", When: time.Now().Add(-100 * time.Millisecond)},
-		Job{Content: "older", When: time.Now().Add(-200 * time.Millisecond)},
+		Job{Body: "oldest", When: time.Now().Add(-300 * time.Millisecond)},
+		Job{Body: "newer", When: time.Now().Add(-100 * time.Millisecond)},
+		Job{Body: "older", When: time.Now().Add(-200 * time.Millisecond)},
 	})
 
 	job, err := q.Pop()
@@ -195,9 +195,9 @@ func TestPopMultiOrder(t *testing.T) {
 	defer clear(q)
 
 	addJobs(t, q, []Job{
-		Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)},
-		Job{Content: "newer", When: time.Now().Add(-100 * time.Millisecond)},
-		Job{Content: "older", When: time.Now().Add(-200 * time.Millisecond)},
+		Job{Body: "oldest", When: time.Now().Add(-300 * time.Millisecond)},
+		Job{Body: "newer", When: time.Now().Add(-100 * time.Millisecond)},
+		Job{Body: "older", When: time.Now().Add(-200 * time.Millisecond)},
 	})
 
 	jobs, err := q.PopJobs(3)
@@ -208,7 +208,7 @@ func TestPopMultiOrder(t *testing.T) {
 
 	expected := []string{"oldest", "older", "newer"}
 	if !reflect.DeepEqual(jobs, expected) {
-		t.Error("Expected to the oldest job off the queue, but I got this:", jobs)
+		t.Error("Expected to having jobs off the queue:", expected, " but I got this:", jobs)
 	}
 
 	job, err := q.Pop()
@@ -227,9 +227,9 @@ func TestRemove(t *testing.T) {
 	defer clear(q)
 
 	addJobs(t, q, []Job{
-		Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)},
-		Job{Content: "newer", When: time.Now().Add(-100 * time.Millisecond)},
-		Job{Content: "older", When: time.Now().Add(-200 * time.Millisecond), ID: "OLDER_ID"},
+		Job{Body: "oldest", When: time.Now().Add(-300 * time.Millisecond)},
+		Job{Body: "newer", When: time.Now().Add(-100 * time.Millisecond)},
+		Job{Body: "older", When: time.Now().Add(-200 * time.Millisecond), ID: "OLDER_ID"},
 	})
 
 	q.Remove("OLDER_ID")
@@ -242,7 +242,7 @@ func TestRemove(t *testing.T) {
 
 	expected := []string{"oldest", "newer"}
 	if !reflect.DeepEqual(jobs, expected) {
-		t.Error("Expected to the oldest job off the queue, but I got this:", jobs)
+		t.Error("Expected to having jobs off the queue:", expected, " but I got this:", jobs)
 	}
 
 	job, err := q.Pop()

@@ -2,19 +2,22 @@ package redisqueue
 
 import (
 	"crypto/md5"
-	"fmt"
+	"crypto/rand"
+	"encoding/base64"
+	"encoding/hex"
 	"io"
-	"reflect"
 	"strconv"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
 )
 
+// Job is the struct of job in queue
 type Job struct {
-	ID      string
-	Content string
-	When    time.Time
+	Body   string
+	ID     string
+	Unique bool
+	When   time.Time
 }
 
 // Queue holds a reference to a redis connection and a queue name.
@@ -24,24 +27,16 @@ type Queue struct {
 	ValueQueue string
 }
 
-func bothUpdated(reply interface{}) bool {
-	s := reflect.ValueOf(reply)
-	if s.Kind() != reflect.Slice {
-		return false
-	}
-	res := make([]interface{}, s.Len())
-	for i := 0; i < s.Len(); i++ {
-		res[i] = s.Index(i).Interface()
-	}
-	val0, _ := res[0].(int64)
-	val1, _ := res[1].(int64)
-	return len(res) == 2 && val0 == 1 && val1 == 1
-}
-
 func generateID(content string) string {
 	h := md5.New()
 	io.WriteString(h, content)
-	return string(h.Sum(nil))
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+func generateRandomID() string {
+	b := make([]byte, 32)
+	rand.Read(b)
+	return base64.URLEncoding.EncodeToString(b)
 }
 
 // New defines a new Queue
@@ -53,12 +48,10 @@ func New(name string, c redis.Conn) *Queue {
 	}
 }
 
-// Remove removes a fob from the queue
+// Remove removes a job from the queue
 func (q *Queue) Remove(id string) (bool, error) {
-	q.c.Send("MULTI")
-	q.c.Send("ZREM", q.KeyQueue, id)
-	q.c.Send("HDEL", q.ValueQueue, id)
-	return redis.Bool(q.c.Do("EXEC"))
+	ok, err := redis.Int(removeScript.Do(q.c, q.KeyQueue, id))
+	return ok == 1, err
 }
 
 // Push schedule a job at some point in the future, or some point in the past.
@@ -66,16 +59,19 @@ func (q *Queue) Remove(id string) (bool, error) {
 // as jobs are popped in order of due date.
 func (q *Queue) Push(job Job) (bool, string, error) {
 	if job.ID == "" {
-		job.ID = generateID(job.Content)
+		if job.Unique {
+			job.ID = generateRandomID()
+		} else {
+			job.ID = generateID(job.Body)
+		}
 	}
 	if job.When.IsZero() {
 		job.When = time.Now()
 	}
-	q.c.Send("MULTI")
-	q.c.Send("ZADD", q.KeyQueue, job.When.UnixNano(), job.ID)
-	q.c.Send("HSET", q.ValueQueue, job.ID, job.Content)
-	reply, err := q.c.Do("EXEC")
-	return bothUpdated(reply), job.ID, err
+	ok, err := redis.Int(pushScript.Do(
+		q.c, q.KeyQueue, job.When.UnixNano(), job.ID, job.Body,
+	))
+	return ok == 1, job.ID, err
 }
 
 // Pending returns the count of jobs pending, including scheduled jobs that are not due yet.
@@ -99,5 +95,7 @@ func (q *Queue) Pop() (string, error) {
 // PopJobs returns multiple jobs from the queue. Safe for concurrent use
 // (multiple goroutines must use their own Queue objects and redis connections)
 func (q *Queue) PopJobs(limit int) ([]string, error) {
-	return redis.Strings(popJobsScript.Do(q.c, q.KeyQueue, fmt.Sprintf("%d", time.Now().UnixNano()), strconv.Itoa(limit)))
+	return redis.Strings(popJobsScript.Do(
+		q.c, q.KeyQueue, time.Now().UnixNano(), strconv.Itoa(limit),
+	))
 }
