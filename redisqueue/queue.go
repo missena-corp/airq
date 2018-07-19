@@ -27,16 +27,26 @@ type Queue struct {
 	ValueQueue string
 }
 
-func generateID(content string) string {
+func (j *Job) generateID() string {
+	if j.Unique {
+		b := make([]byte, 32)
+		rand.Read(b)
+		return base64.URLEncoding.EncodeToString(b)
+	}
 	h := md5.New()
-	io.WriteString(h, content)
+	io.WriteString(h, j.Body)
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func generateRandomID() string {
-	b := make([]byte, 32)
-	rand.Read(b)
-	return base64.URLEncoding.EncodeToString(b)
+// New defines a full job
+func (j *Job) New() *Job {
+	if j.ID == "" {
+		j.ID = j.generateID()
+	}
+	if j.When.IsZero() {
+		j.When = time.Now()
+	}
+	return j
 }
 
 // New defines a new Queue
@@ -57,21 +67,10 @@ func (q *Queue) Remove(id string) (bool, error) {
 // Push schedule a job at some point in the future, or some point in the past.
 // Scheduling a job far in the past is the same as giving it a high priority,
 // as jobs are popped in order of due date.
-func (q *Queue) Push(job *Job) (bool, string, error) {
-	if job.ID == "" {
-		if job.Unique {
-			job.ID = generateRandomID()
-		} else {
-			job.ID = generateID(job.Body)
-		}
-	}
-	if job.When.IsZero() {
-		job.When = time.Now()
-	}
-	ok, err := redis.Int(pushScript.Do(
-		q.c, q.KeyQueue, job.When.UnixNano(), job.ID, job.Body,
-	))
-	return ok == 1, job.ID, err
+func (q *Queue) Push(j *Job) (bool, string, error) {
+	j = j.New()
+	ok, err := redis.Int(pushScript.Do(q.c, q.KeyQueue, j.When.UnixNano(), j.ID, j.Body))
+	return ok == 1, j.ID, err
 }
 
 // Pending returns the count of jobs pending, including scheduled jobs that are not due yet.
