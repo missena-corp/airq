@@ -1,8 +1,8 @@
 package redisqueue
 
 import (
-	"crypto/md5"
 	"crypto/rand"
+	"crypto/sha1"
 	"encoding/base64"
 	"encoding/hex"
 	"io"
@@ -29,11 +29,11 @@ type Queue struct {
 
 func (j *Job) generateID() string {
 	if j.Unique {
-		b := make([]byte, 32)
+		b := make([]byte, 40)
 		rand.Read(b)
 		return base64.URLEncoding.EncodeToString(b)
 	}
-	h := md5.New()
+	h := sha1.New()
 	io.WriteString(h, j.Body)
 	return hex.EncodeToString(h.Sum(nil))
 }
