@@ -22,8 +22,7 @@ local value_queue = key_queue .. ':values'
 local timestamp = KEYS[2]
 local key = KEYS[3]
 local value = KEYS[4]
-local res = redis.call('zadd', key_queue, timestamp, key)
-if res ~= 1 then
+if redis.call('zadd', key_queue, timestamp, key) ~= 1 then
 	return 0
 end
 return redis.call('hset', value_queue, key, value)`)
@@ -32,8 +31,7 @@ var removeScript = redis.NewScript(2, `
 local key_queue = KEYS[1]
 local value_queue = key_queue .. ':values'
 local key = KEYS[2]
-local res = redis.call('zrem', key_queue, key)
-if res ~= 1 then
+if redis.call('zrem', key_queue, key) ~= 1 then
 	return 0
 end
 return redis.call('hdel', value_queue, key)`)
