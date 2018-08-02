@@ -38,8 +38,7 @@ func (j *Job) generateID() string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-// New defines a full job
-func (j *Job) New() *Job {
+func (j *Job) setDefaults() *Job {
 	if j.ID == "" {
 		j.ID = j.generateID()
 	}
@@ -50,7 +49,7 @@ func (j *Job) New() *Job {
 }
 
 // New defines a new Queue
-func New(name string, c redis.Conn) *Queue {
+func New(c redis.Conn, name string) *Queue {
 	return &Queue{
 		c:          c,
 		KeyQueue:   name,
@@ -68,15 +67,13 @@ func (q *Queue) Remove(id string) (bool, error) {
 // Scheduling a job far in the past is the same as giving it a high priority,
 // as jobs are popped in order of due date.
 func (q *Queue) Push(j *Job) (bool, string, error) {
-	j = j.New()
+	j.setDefaults()
 	ok, err := redis.Int(pushScript.Do(q.c, q.KeyQueue, j.When.UnixNano(), j.ID, j.Body))
 	return ok == 1, j.ID, err
 }
 
 // Pending returns the count of jobs pending, including scheduled jobs that are not due yet.
-func (q *Queue) Pending() (int64, error) {
-	return redis.Int64(q.c.Do("ZCARD", q.KeyQueue))
-}
+func (q *Queue) Pending() (int64, error) { return redis.Int64(q.c.Do("ZCARD", q.KeyQueue)) }
 
 // Pop removes and returns a single job from the queue. Safe for concurrent use
 // (multiple goroutines must use their own Queue objects and redis connections)

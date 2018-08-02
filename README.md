@@ -1,10 +1,12 @@
-# go-redis-queue
+# Air Q (**r**edis **q**ueue)
 
 ## What and why
 
-This is a redis-based queue for usage in Go. I evaluated a lot of other options before writing this, but I really didn't like the API of most of the other options out there, and nearly all of them were missing one or more of my required features.
+This is a redis-based queue for usage in Go.
+This project is a fork from [go-redis-queue](https://github.com/agilebits/go-redis-queue)
+I liked this solution a lot but i missed a few features.
 
-## Features
+## Original Features
 
 - Ability to add arbitrary tasks to a queue in redis
 - Option to Dedup tasks based on the task signature.
@@ -12,16 +14,19 @@ This is a redis-based queue for usage in Go. I evaluated a lot of other options 
 - Atomic Push and Pop from queue. Two workers cannot get the same job.
 - Sorted FIFO queue.
 - Can act like a priority queue by scheduling a job with a really old timestamp
-- Well tested
-- Small, concise codebase
 - Simple API
+
+## Added Features
+
+- Ability to remove a job
+- Ability to have multiple times the same job (same body)
 
 ## Usage
 
 Adding jobs to a queue.
 
 ```go
-import "github.com/AgileBits/go-redis-queue/redisqueue"
+import "github.com/missena-corp/airq"
 ```
 
 ```go
@@ -29,15 +34,15 @@ c, err := redis.Dial("tcp", "127.0.0.1:6379")
 if err != nil { ... }
 defer c.Close()
 
-q := redisqueue.New("some_queue_name", c)
+q := airq.New(c, "some_queue_name")
 
-wasAdded, taskID, err := q.Push(redisqueue.Job{Body: "basic item"})
+added, taskID, err := q.Push(&airq.Job{Body: "basic item"})
 if err != nil { ... }
 
 queueSize, err := q.Pending()
 if err != nil { ... }
 
-wasAdded, taskID, err := q.Push(redisqueue.Job{
+added, taskID, err := q.Push(&airq.Job{
   Body: "scheduled item",
   When: time.Now().Add(10*time.Minute),
 })
@@ -51,7 +56,7 @@ c, err := redis.Dial("tcp", "127.0.0.1:6379")
 if err != nil { ... }
 defer c.Close()
 
-q := redisqueue.New("some_queue_name", c)
+q := airq.New(c, "some_queue_name")
 
 for !timeToQuit {
   job, err = q.Pop()
@@ -71,7 +76,7 @@ c, err := redis.Dial("tcp", "127.0.0.1:6379")
 if err != nil { ... }
 defer c.Close()
 
-q := redisqueue.New("some_queue_name", c)
+q := airq.New(c, "some_queue_name")
 
 for !timeToQuit {
   jobs, err := q.PopJobs(100) // argument is "limit"
@@ -85,9 +90,3 @@ for !timeToQuit {
   }
 }
 ```
-
-## Requirements
-
-- Redis 2.6.0 or greater
-- github.com/gomodule/redigo/redis
-- Go

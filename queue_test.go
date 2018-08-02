@@ -16,7 +16,7 @@ func initQueue(t *testing.T) *Queue {
 		t.Error(err)
 		t.FailNow()
 	}
-	q := New(name, c)
+	q := New(c, name)
 	if err := flushQueue(q); err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -53,6 +53,18 @@ func randomName() string {
 		panic(err)
 	}
 	return string(b)
+}
+
+func TestNewJob(t *testing.T) {
+	t.Parallel()
+	j := &Job{}
+	j.setDefaults()
+	if j.ID == "" {
+		t.Error("job.ID should be generated")
+	}
+	if j.When.IsZero() {
+		t.Error("job.When should be now")
+	}
 }
 
 func TestQueueTasks(t *testing.T) {
