@@ -28,7 +28,7 @@ func (q *Queue) Push(jobs ...*Job) (ids []string, err error) {
 	}
 	ok, err := redis.Int(pushScript.Do(q.Conn, toInterface(keysAndArgs)...))
 	if err == nil && ok != 1 {
-		err = fmt.Errorf("some jobs are not added")
+		err = fmt.Errorf("error while adding jobs %v to queue %s", jobs, q.Name)
 	}
 	return ids, err
 }
@@ -62,7 +62,7 @@ func (q *Queue) Remove(ids ...string) error {
 	keysAndArgs := append([]string{q.Name}, ids...)
 	ok, err := redis.Int(removeScript.Do(q.Conn, toInterface(keysAndArgs)...))
 	if err == nil && ok != 1 {
-		err = fmt.Errorf("error while deleting jobs")
+		err = fmt.Errorf("error while deleting jobs %v in queue %s", ids, q.Name)
 	}
 	return err
 }
