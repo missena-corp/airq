@@ -31,12 +31,12 @@ func addJobs(t *testing.T, q *Queue, jobs []Job) {
 
 func clear(q *Queue) {
 	flushQueue(q)
-	q.c.Close()
+	q.Conn.Close()
 }
 
 func flushQueue(q *Queue) {
-	q.c.Send("DEL", q.Name)
-	q.c.Send("DEL", q.Name+":values")
+	q.Conn.Send("DEL", q.Name)
+	q.Conn.Send("DEL", q.Name+":values")
 }
 
 func randomName() string {
