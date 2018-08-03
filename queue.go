@@ -10,14 +10,16 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/vmihailenco/msgpack"
 )
 
 // Job is the struct of job in queue
 type Job struct {
-	Body   string
-	ID     string
-	Unique bool
-	When   time.Time
+	Body         string    `msgpack:"body"`
+	ID           string    `msgpack:"id"`
+	Unique       bool      `msgpack:"-"`
+	When         time.Time `msgpack:"-"`
+	WhenUnixNano int64     `msgpack:"when"`
 }
 
 // Queue holds a reference to a redis connection and a queue name.
@@ -38,14 +40,20 @@ func (j *Job) generateID() string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func (j *Job) setDefaults() *Job {
+func (j *Job) setDefaults() {
 	if j.ID == "" {
 		j.ID = j.generateID()
 	}
 	if j.When.IsZero() {
 		j.When = time.Now()
 	}
-	return j
+	j.WhenUnixNano = j.When.UnixNano()
+}
+
+func (j *Job) String() string {
+	j.setDefaults()
+	b, _ := msgpack.Marshal(j)
+	return string(b)
 }
 
 // New defines a new Queue
@@ -67,8 +75,7 @@ func (q *Queue) Remove(id string) (bool, error) {
 // Scheduling a job far in the past is the same as giving it a high priority,
 // as jobs are popped in order of due date.
 func (q *Queue) Push(j *Job) (bool, string, error) {
-	j.setDefaults()
-	ok, err := redis.Int(pushScript.Do(q.c, q.KeyQueue, j.When.UnixNano(), j.ID, j.Body))
+	ok, err := redis.Int(pushScript.Do(q.c, q.KeyQueue, j.String()))
 	return ok == 1, j.ID, err
 }
 

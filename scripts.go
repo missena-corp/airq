@@ -16,16 +16,14 @@ redis.call('zrem', key_queue, unpack(keys))
 redis.call('hdel', value_queue, unpack(keys))
 return values`)
 
-var pushScript = redis.NewScript(4, `
+var pushScript = redis.NewScript(1, `
 local key_queue = KEYS[1]
 local value_queue = key_queue .. ':values'
-local timestamp = KEYS[2]
-local key = KEYS[3]
-local value = KEYS[4]
-if redis.call('zadd', key_queue, timestamp, key) ~= 1 then
+local _, job = cmsgpack.unpack_one(ARGV[1])
+if redis.call('zadd', key_queue, job.when, job.id) ~= 1 then
 	return 0
 end
-return redis.call('hset', value_queue, key, value)`)
+return redis.call('hset', value_queue, job.id, job.body)`)
 
 var removeScript = redis.NewScript(2, `
 local key_queue = KEYS[1]
