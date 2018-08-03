@@ -2,7 +2,6 @@ package airq
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
@@ -53,7 +52,7 @@ func (q *Queue) Pop() (string, error) {
 // (multiple goroutines must use their own Queue objects and redis connections)
 func (q *Queue) PopJobs(limit int) ([]string, error) {
 	return redis.Strings(popJobsScript.Do(
-		q.Conn, q.Name, time.Now().UnixNano(), strconv.Itoa(limit),
+		q.Conn, q.Name, time.Now().UnixNano(), limit,
 	))
 }
 
