@@ -2,6 +2,7 @@ package redisqueue
 
 import (
 	"crypto/rand"
+	"encoding/base64"
 	"reflect"
 	"testing"
 	"time"
@@ -16,12 +17,7 @@ func initQueue(t *testing.T) *Queue {
 		t.Error(err)
 		t.FailNow()
 	}
-	q := New(c, name)
-	if err := flushQueue(q); err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-	return q
+	return New(c, name)
 }
 
 func addJobs(t *testing.T, q *Queue, jobs []Job) {
@@ -38,21 +34,15 @@ func clear(q *Queue) {
 	q.c.Close()
 }
 
-func flushQueue(q *Queue) error {
-	q.c.Send("MULTI")
+func flushQueue(q *Queue) {
 	q.c.Send("DEL", q.KeyQueue)
 	q.c.Send("DEL", q.ValueQueue)
-	_, err := q.c.Do("EXEC")
-	return err
 }
 
 func randomName() string {
 	b := make([]byte, 12)
-	_, err := rand.Read(b)
-	if err != nil {
-		panic(err)
-	}
-	return string(b)
+	rand.Read(b)
+	return base64.URLEncoding.EncodeToString(b)
 }
 
 func TestNewJob(t *testing.T) {
@@ -78,9 +68,9 @@ func TestQueueTasks(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, err = q.Push(&Job{Body: "basic item 1"})
+	ids, err := q.Push(&Job{Body: "basic item 1"})
 	if err != nil {
-		t.Error(err)
+		t.Error(err, ids)
 		t.FailNow()
 	}
 
@@ -102,14 +92,9 @@ func TestQueueTasks(t *testing.T) {
 	}
 
 	// it adds 2 jobs at once
-	ids, err := q.Push(&Job{Body: "basic item 2"}, &Job{Body: "basic item 3"})
+	_, err = q.Push(&Job{Body: "basic item 2"}, &Job{Body: "basic item 3"})
 	if err != nil {
 		t.Error(err)
-		t.FailNow()
-	}
-
-	if len(ids) != 2 {
-		t.Errorf("expected 2 jobs to be added at once, was %v", ids)
 		t.FailNow()
 	}
 

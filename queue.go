@@ -80,9 +80,10 @@ func (q *Queue) Push(jobs ...*Job) (ids []string, err error) {
 	keysAndArgs := []string{q.KeyQueue}
 	for _, j := range jobs {
 		keysAndArgs = append(keysAndArgs, j.String())
+		ids = append(ids, j.ID)
 	}
-	ids, err = redis.Strings(pushScript.Do(q.c, toInterface(keysAndArgs)...))
-	if err == nil && len(ids) != len(jobs) {
+	ok, err := redis.Int(pushScript.Do(q.c, toInterface(keysAndArgs)...))
+	if err == nil && ok != 1 {
 		err = fmt.Errorf("some jobs are not added")
 	}
 	return ids, err
