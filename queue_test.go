@@ -1,4 +1,4 @@
-package redisqueue
+package airq
 
 import (
 	"crypto/rand"
