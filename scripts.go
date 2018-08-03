@@ -28,8 +28,5 @@ return redis.call('hset', value_queue, job.id, job.body)`)
 var removeScript = redis.NewScript(1, `
 local key_queue = KEYS[1]
 local value_queue = key_queue .. ':values'
-local key = ARGV[1]
-if redis.call('zrem', key_queue, key) ~= 1 then
-	return 0
-end
-return redis.call('hdel', value_queue, key)`)
+redis.call('zrem', key_queue, unpack(ARGV))
+return redis.call('hdel', value_queue, unpack(ARGV))`)

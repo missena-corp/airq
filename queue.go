@@ -66,8 +66,13 @@ func New(c redis.Conn, name string) *Queue {
 }
 
 // Remove removes a job from the queue
-func (q *Queue) Remove(id string) (bool, error) {
-	ok, err := redis.Int(removeScript.Do(q.c, q.KeyQueue, id))
+func (q *Queue) Remove(ids ...string) (bool, error) {
+	arr := append([]string{q.KeyQueue}, ids...)
+	keysAndArgs := make([]interface{}, len(arr))
+	for i := range arr {
+		keysAndArgs[i] = arr[i]
+	}
+	ok, err := redis.Int(removeScript.Do(q.c, keysAndArgs...))
 	return ok == 1, err
 }
 
