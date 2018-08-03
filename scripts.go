@@ -19,11 +19,18 @@ return values`)
 var pushScript = redis.NewScript(1, `
 local key_queue = KEYS[1]
 local value_queue = key_queue .. ':values'
-local _, job = cmsgpack.unpack_one(ARGV[1])
-if redis.call('zadd', key_queue, job.when, job.id) ~= 1 then
-	return 0
+local ids = {}
+for i=1, #ARGV do
+	local _, job = cmsgpack.unpack_one(ARGV[i])
+	if redis.call('zadd', key_queue, job.when, job.id) ~= 1 then
+		return ids
+	end
+	if redis.call('hset', value_queue, job.id, job.body) ~= 1 then
+		return ids
+	end
+	table.insert(ids, job.id)
 end
-return redis.call('hset', value_queue, job.id, job.body)`)
+return ids`)
 
 var removeScript = redis.NewScript(1, `
 local key_queue = KEYS[1]

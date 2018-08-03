@@ -18,8 +18,9 @@ I liked this solution a lot but i missed a few features.
 
 ## Added Features
 
-- Ability to remove a job
-- Ability to have multiple times the same job (same body)
+- Insert multiple job at once
+- Remove a job
+- Have multiple times the same job (same body)
 
 ## Usage
 

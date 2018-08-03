@@ -26,7 +26,7 @@ func initQueue(t *testing.T) *Queue {
 
 func addJobs(t *testing.T, q *Queue, jobs []Job) {
 	for _, job := range jobs {
-		if _, _, err := q.Push(&job); err != nil {
+		if _, err := q.Push(&job); err != nil {
 			t.Error(err)
 			t.FailNow()
 		}
@@ -72,33 +72,50 @@ func TestQueueTasks(t *testing.T) {
 	q := initQueue(t)
 	defer clear(q)
 
-	b, _, err := q.Push(&Job{Body: "basic item 1"})
+	_, err := q.Push(&Job{Body: "basic item 1"})
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
 
-	if b != true {
-		t.Error("expected item to be added to queue but was not")
-	}
-
-	b, _, err = q.Push(&Job{Body: "basic item 1"})
+	_, err = q.Push(&Job{Body: "basic item 1"})
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
 
-	if b != false {
-		t.Error("expected item not to be added to queue but it was")
-	}
-
-	pending, err := q.Pending()
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
+	pending, _ := q.Pending()
 	if pending != 1 {
 		t.Error("Expected 1 job pending in queue, was", pending)
+	}
+
+	// it adds a `Unique` job
+	_, err = q.Push(&Job{Body: "basic item 1", Unique: true})
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	pending, _ = q.Pending()
+	if pending != 2 {
+		t.Error("Expected 2 jobs pending in queue, was", pending)
+	}
+
+	// it adds 2 jobs at once
+	ids, err := q.Push(&Job{Body: "basic item 2"}, &Job{Body: "basic item 3"})
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	if len(ids) != 2 {
+		t.Errorf("expected 2 jobs to be added at once, was %v", ids)
+		t.FailNow()
+	}
+
+	pending, _ = q.Pending()
+	if pending != 4 {
+		t.Error("Expected 4 jobs pending in queue, was", pending)
 	}
 }
 
@@ -107,14 +124,10 @@ func TestQueueTaskScheduling(t *testing.T) {
 	q := initQueue(t)
 	defer clear(q)
 
-	b, _, err := q.Push(&Job{Body: "scheduled item 1", When: time.Now().Add(90 * time.Millisecond)})
+	_, err := q.Push(&Job{Body: "scheduled item 1", When: time.Now().Add(90 * time.Millisecond)})
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
-	}
-
-	if b != true {
-		t.Error("expected item to be added to queue but was not")
 	}
 
 	pending, err := q.Pending()

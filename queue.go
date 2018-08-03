@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"strconv"
 	"time"
@@ -67,21 +68,24 @@ func New(c redis.Conn, name string) *Queue {
 
 // Remove removes a job from the queue
 func (q *Queue) Remove(ids ...string) (bool, error) {
-	arr := append([]string{q.KeyQueue}, ids...)
-	keysAndArgs := make([]interface{}, len(arr))
-	for i := range arr {
-		keysAndArgs[i] = arr[i]
-	}
-	ok, err := redis.Int(removeScript.Do(q.c, keysAndArgs...))
+	keysAndArgs := append([]string{q.KeyQueue}, ids...)
+	ok, err := redis.Int(removeScript.Do(q.c, toInterface(keysAndArgs)...))
 	return ok == 1, err
 }
 
 // Push schedule a job at some point in the future, or some point in the past.
 // Scheduling a job far in the past is the same as giving it a high priority,
 // as jobs are popped in order of due date.
-func (q *Queue) Push(j *Job) (bool, string, error) {
-	ok, err := redis.Int(pushScript.Do(q.c, q.KeyQueue, j.String()))
-	return ok == 1, j.ID, err
+func (q *Queue) Push(jobs ...*Job) (ids []string, err error) {
+	keysAndArgs := []string{q.KeyQueue}
+	for _, j := range jobs {
+		keysAndArgs = append(keysAndArgs, j.String())
+	}
+	ids, err = redis.Strings(pushScript.Do(q.c, toInterface(keysAndArgs)...))
+	if err == nil && len(ids) != len(jobs) {
+		err = fmt.Errorf("some jobs are not added")
+	}
+	return ids, err
 }
 
 // Pending returns the count of jobs pending, including scheduled jobs that are not due yet.
@@ -106,4 +110,12 @@ func (q *Queue) PopJobs(limit int) ([]string, error) {
 	return redis.Strings(popJobsScript.Do(
 		q.c, q.KeyQueue, time.Now().UnixNano(), strconv.Itoa(limit),
 	))
+}
+
+func toInterface(strs []string) []interface{} {
+	intrs := make([]interface{}, len(strs))
+	for i := range strs {
+		intrs[i] = strs[i]
+	}
+	return intrs
 }
