@@ -35,8 +35,8 @@ func clear(q *Queue) {
 }
 
 func flushQueue(q *Queue) {
-	q.c.Send("DEL", q.KeyQueue)
-	q.c.Send("DEL", q.ValueQueue)
+	q.c.Send("DEL", q.Name)
+	q.c.Send("DEL", q.Name+":values")
 }
 
 func randomName() string {
