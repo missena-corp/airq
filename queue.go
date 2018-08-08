@@ -53,7 +53,7 @@ func (q *Queue) Pop() (string, error) {
 
 // PopJobs returns multiple jobs from the queue. Safe for concurrent use
 // (multiple goroutines must use their own Queue objects and redis connections)
-func (q *Queue) PopJobs(limit int) ([]string, error) {
+func (q *Queue) PopJobs(limit int) (res []string, err error) {
 	if limit == 0 {
 		return []string{}, fmt.Errorf("limit 0")
 	}
@@ -63,7 +63,6 @@ func (q *Queue) PopJobs(limit int) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	var res []string
 	for _, c := range redisRes {
 		res = append(res, uncompress(c))
 	}
