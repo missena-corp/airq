@@ -52,9 +52,7 @@ func (j *Job) generateID() string {
 }
 
 func (j *Job) setDefaults() {
-	if j.CompressedContent == "" {
-		j.CompressedContent = compress(j.Content)
-	}
+	j.CompressedContent = compress(j.Content)
 	if j.ID == "" {
 		j.ID = j.generateID()
 	}
