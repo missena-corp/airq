@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"time"
 
@@ -11,18 +10,25 @@ import (
 	"google.golang.org/grpc"
 )
 
-type Server struct{ Queue *airq.Queue }
+type Server struct {
+	*grpc.Server
+	Queue *airq.Queue
+}
 
-func New(q *airq.Queue) Server { return Server{Queue: q} }
+func New(q *airq.Queue) Server {
+	return Server{
+		Server: grpc.NewServer(),
+		Queue:  q,
+	}
+}
 
 func (s Server) Serve(connStr string) error {
-	srv := grpc.NewServer()
-	job.RegisterJobsServer(srv, s)
+	job.RegisterJobsServer(s.Server, s)
 	l, err := net.Listen("tcp", connStr)
 	if err != nil {
-		return fmt.Errorf("could not listen to %s: %v", connStr, err)
+		return err
 	}
-	return srv.Serve(l)
+	return s.Server.Serve(l)
 }
 
 func (s Server) Push(ctx context.Context, jobList *job.JobList) (*job.IdList, error) {
