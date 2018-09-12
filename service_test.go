@@ -41,12 +41,13 @@ func TestService(t *testing.T) {
 	q, teardown := setup(t)
 	defer teardown()
 
+	connStr := ":42039"
+
 	srv := server.New(q)
+	go srv.Serve(connStr)
 	defer srv.Stop()
 
-	go srv.Serve(":8888")
-
-	conn, err := grpc.Dial(":8888", grpc.WithInsecure())
+	conn, err := grpc.Dial(connStr, grpc.WithInsecure())
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
