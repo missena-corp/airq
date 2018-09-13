@@ -46,6 +46,8 @@ func TestService(t *testing.T) {
 	srv := server.New(q)
 	go srv.Serve(connStr)
 	defer srv.Stop()
+	// wait for the grpc server to be up
+	time.Sleep(200 * time.Millisecond)
 
 	conn, err := grpc.Dial(connStr, grpc.WithInsecure())
 	if err != nil {
