@@ -23,12 +23,13 @@ func (q *Queue) Push(jobs ...*Job) (ids []string, err error) {
 	if len(jobs) == 0 {
 		return []string{}, fmt.Errorf("no jobs provided")
 	}
-	keysAndArgs := []string{q.Name}
+	// keysAndArgs := []string{q.Name}
+	keysAndArgs := redis.Args{q.Name}
 	for _, j := range jobs {
-		keysAndArgs = append(keysAndArgs, j.String())
+		keysAndArgs = keysAndArgs.AddFlat(j.String())
 		ids = append(ids, j.ID)
 	}
-	ok, err := redis.Int(pushScript.Do(q.Conn, toInterface(keysAndArgs)...))
+	ok, err := redis.Int(pushScript.Do(q.Conn, keysAndArgs...))
 	if err == nil && ok != 1 {
 		err = fmt.Errorf("can't add all jobs %v to queue %s", jobs, q.Name)
 	}
@@ -74,18 +75,9 @@ func (q *Queue) Remove(ids ...string) error {
 	if len(ids) == 0 {
 		return fmt.Errorf("no id provided")
 	}
-	keysAndArgs := append([]string{q.Name}, ids...)
-	ok, err := redis.Int(removeScript.Do(q.Conn, toInterface(keysAndArgs)...))
+	ok, err := redis.Int(removeScript.Do(q.Conn, redis.Args{q.Name}.AddFlat(ids)...))
 	if err == nil && ok != 1 {
 		err = fmt.Errorf("can't delete all jobs %v in queue %s", ids, q.Name)
 	}
 	return err
-}
-
-func toInterface(strs []string) []interface{} {
-	intrs := make([]interface{}, len(strs))
-	for i := range strs {
-		intrs[i] = strs[i]
-	}
-	return intrs
 }

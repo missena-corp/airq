@@ -217,12 +217,12 @@ func TestRemove(t *testing.T) {
 	defer teardown()
 
 	addJobs(t, q, []Job{
-		Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond)},
+		Job{Content: "oldest", When: time.Now().Add(-300 * time.Millisecond), ID: "01"},
 		Job{Content: "newer", When: time.Now().Add(-100 * time.Millisecond)},
-		Job{Content: "older", When: time.Now().Add(-200 * time.Millisecond), ID: "OLDER_ID"},
+		Job{Content: "older", When: time.Now().Add(-200 * time.Millisecond), ID: "02"},
 	})
 
-	q.Remove("OLDER_ID")
+	q.Remove("01", "02")
 
 	jobs, err := q.PopJobs(3)
 	if err != nil {
@@ -230,17 +230,8 @@ func TestRemove(t *testing.T) {
 		t.FailNow()
 	}
 
-	expected := []string{"oldest", "newer"}
+	expected := []string{"newer"}
 	if !reflect.DeepEqual(jobs, expected) {
 		t.Error("Expected to having jobs off the queue:", expected, " but I got this:", jobs)
-	}
-
-	job, err := q.Pop()
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-	if job != "" {
-		t.Error("Expected no jobs")
 	}
 }
