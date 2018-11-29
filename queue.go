@@ -13,6 +13,18 @@ type Queue struct {
 	Name string
 }
 
+// Loop over the queue
+func (q *Queue) Loop(cb func([]string, error)) {
+	for {
+		jobs, err := q.PopJobs(100)
+		if err != nil || len(jobs) > 0 {
+			cb(jobs, err)
+			continue
+		}
+		time.Sleep(1 * time.Second)
+	}
+}
+
 // New defines a new Queue
 func New(c redis.Conn, name string) *Queue { return &Queue{Conn: c, Name: name} }
 
