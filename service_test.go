@@ -14,6 +14,20 @@ import (
 	"google.golang.org/grpc"
 )
 
+func newPool() *redis.Pool {
+	return &redis.Pool{
+		MaxIdle:   80,
+		MaxActive: 12000,
+		Dial: func() (redis.Conn, error) {
+			c, err := redis.Dial("tcp", ":6379")
+			if err != nil {
+				panic(err.Error())
+			}
+			return c, err
+		},
+	}
+}
+
 func randomName() string {
 	b := make([]byte, 12)
 	rand.Read(b)
@@ -23,12 +37,7 @@ func randomName() string {
 func setup(t *testing.T) (*airq.Queue, func()) {
 	t.Parallel()
 	name := randomName()
-	c, err := redis.Dial("tcp", "127.0.0.1:6379")
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-	q := airq.New(c, name)
+	q := airq.New(name, airq.WithPool(newPool()))
 	teardown := func() {
 		q.Conn.Send("DEL", q.Name)
 		q.Conn.Send("DEL", q.Name+":values")
