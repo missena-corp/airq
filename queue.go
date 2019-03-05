@@ -13,15 +13,29 @@ type Queue struct {
 	Name string
 }
 
+type LoopOptions struct {
+	Size  int
+	Sleep time.Duration
+}
+
 // Loop over the queue
-func (q *Queue) Loop(cb func([]string, error)) {
+func (q *Queue) Loop(cb func([]string, error), opts *LoopOptions) {
+	if opts == nil {
+		opts = new(LoopOptions)
+	}
+	if opts.Size == 0 {
+		opts.Size = 100
+	}
+	if opts.Sleep == 0 {
+		opts.Sleep = 3 * time.Second
+	}
 	for {
-		jobs, err := q.PopJobs(100)
+		jobs, err := q.PopJobs(opts.Size)
 		if err != nil || len(jobs) > 0 {
 			cb(jobs, err)
 			continue
 		}
-		time.Sleep(1 * time.Second)
+		time.Sleep(opts.Sleep)
 	}
 }
 
