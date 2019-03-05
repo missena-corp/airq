@@ -61,11 +61,9 @@ func (q *Queue) Loop(cb func([]string, error), opts *LoopOptions) {
 }
 
 // New defines a new Queue
-func New(name string, opts ...Option) *Queue {
+func New(name string, opt Option) *Queue {
 	q := &Queue{Name: name}
-	for _, opt := range opts {
-		opt(q)
-	}
+	opt(q)
 	return q
 }
 
