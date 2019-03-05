@@ -21,17 +21,22 @@ type LoopOptions struct {
 
 type Option func(*Queue)
 
-func WithConn(c redis.Conn) Option  { return func(q *Queue) { q.Conn = c } }
-func WithPool(p *redis.Pool) Option { return func(q *Queue) { q.Pool = p } }
+func WithConn(c redis.Conn) Option { return func(q *Queue) { q.Conn = c } }
+func WithPool(p *redis.Pool) Option {
+	return func(q *Queue) {
+		q.Conn = p.Get()
+		q.Pool = p
+	}
+}
 
-func (q *Queue) conn() redis.Conn {
+func (q *Queue) conn() (redis.Conn, bool) {
 	if q.Conn == nil && q.Pool == nil {
 		panic("no connection defined")
 	}
-	if q.Conn != nil {
-		return q.Conn
+	if q.Pool != nil {
+		return q.Pool.Get(), true
 	}
-	return q.Pool.Get()
+	return q.Conn, false
 }
 
 // Loop over the queue
@@ -71,8 +76,10 @@ func (q *Queue) Push(jobs ...*Job) (ids []string, err error) {
 	if len(jobs) == 0 {
 		return []string{}, fmt.Errorf("no jobs provided")
 	}
-	c := q.conn()
-	defer c.Close()
+	c, managed := q.conn()
+	if managed {
+		defer c.Close()
+	}
 	keysAndArgs := redis.Args{q.Name}
 	for _, j := range jobs {
 		keysAndArgs = keysAndArgs.AddFlat(j.String())
@@ -87,8 +94,10 @@ func (q *Queue) Push(jobs ...*Job) (ids []string, err error) {
 
 // Pending returns the count of jobs pending, including scheduled jobs that are not due yet.
 func (q *Queue) Pending() (int64, error) {
-	c := q.conn()
-	defer c.Close()
+	c, managed := q.conn()
+	if managed {
+		defer c.Close()
+	}
 	return redis.Int64(c.Do("ZCARD", q.Name))
 }
 
@@ -111,8 +120,10 @@ func (q *Queue) PopJobs(limit int) (res []string, err error) {
 	if limit == 0 {
 		return []string{}, fmt.Errorf("limit 0")
 	}
-	c := q.conn()
-	defer c.Close()
+	c, managed := q.conn()
+	if managed {
+		defer c.Close()
+	}
 	redisRes, err := redis.Strings(popJobsScript.Do(
 		c, q.Name, time.Now().UnixNano(), limit,
 	))
@@ -130,8 +141,10 @@ func (q *Queue) Remove(ids ...string) error {
 	if len(ids) == 0 {
 		return fmt.Errorf("no id provided")
 	}
-	c := q.conn()
-	defer c.Close()
+	c, managed := q.conn()
+	if managed {
+		defer c.Close()
+	}
 	ok, err := redis.Int(removeScript.Do(c, redis.Args{q.Name}.AddFlat(ids)...))
 	if err == nil && ok != 1 {
 		err = fmt.Errorf("can't delete all jobs %v in queue %s", ids, q.Name)
