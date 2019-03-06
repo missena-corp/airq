@@ -39,9 +39,10 @@ func setup(t *testing.T) (*airq.Queue, func()) {
 	name := randomName()
 	q := airq.New(name, airq.WithPool(newPool()))
 	teardown := func() {
-		q.Conn.Send("DEL", q.Name)
-		q.Conn.Send("DEL", q.Name+":values")
-		q.Conn.Close()
+		conn := q.Pool.Get()
+		conn.Send("DEL", q.Name)
+		conn.Send("DEL", q.Name+":values")
+		conn.Close()
 	}
 	return q, teardown
 }

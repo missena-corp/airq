@@ -21,13 +21,8 @@ type LoopOptions struct {
 
 type Option func(*Queue)
 
-func WithConn(c redis.Conn) Option { return func(q *Queue) { q.Conn = c } }
-func WithPool(p *redis.Pool) Option {
-	return func(q *Queue) {
-		q.Conn = p.Get()
-		q.Pool = p
-	}
-}
+func WithConn(c redis.Conn) Option  { return func(q *Queue) { q.Conn = c } }
+func WithPool(p *redis.Pool) Option { return func(q *Queue) { q.Pool = p } }
 
 func (q *Queue) conn() (redis.Conn, bool) {
 	if q.Conn == nil && q.Pool == nil {
