@@ -3,10 +3,8 @@ language: go
 services:
   - docker
 before_install:
-  - export PATH=$PATH:$HOME/.local/bin
-  - pip install --user docker-compose
-  - docker-compose up -d
-  - go get -u github.com/golang/dep/...
-  - dep ensure
+  - export GO111MODULE=on
+  - docker run -p 6379:6379 -d redis
+  - go mod vendor
 script:
   - go test ./...

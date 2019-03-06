@@ -35,7 +35,7 @@ c, err := redis.Dial("tcp", "127.0.0.1:6379")
 if err != nil { ... }
 defer c.Close()
 
-q := airq.New(c, "queue_name")
+q := airq.New("queue_name", airq.WithConn(c))
 
 added, taskID, err := q.Push(&airq.Job{Content: "basic item"})
 if err != nil { ... }
@@ -57,7 +57,7 @@ c, err := redis.Dial("tcp", "127.0.0.1:6379")
 if err != nil { ... }
 defer c.Close()
 
-q := airq.New(c, "queue_name")
+q := airq.New("queue_name", airq.WithConn(c))
 
 for !timeToQuit {
   job, err = q.Pop()
@@ -77,7 +77,7 @@ c, err := redis.Dial("tcp", "127.0.0.1:6379")
 if err != nil { ... }
 defer c.Close()
 
-q := airq.New(c, "queue_name")
+q := airq.New("queue_name", airq.WithConn(c))
 
 for !timeToQuit {
   jobs, err := q.PopJobs(100) // argument is "limit"

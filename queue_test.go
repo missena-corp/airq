@@ -18,7 +18,7 @@ func setup(t *testing.T) (*Queue, func()) {
 		t.Error(err)
 		t.FailNow()
 	}
-	q := New(c, name)
+	q := New(name, WithConn(c))
 	teardown := func() {
 		q.Conn.Send("DEL", q.Name)
 		q.Conn.Send("DEL", q.Name+":values")
